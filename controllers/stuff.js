@@ -1,8 +1,8 @@
 const Thing = require('../models/thing');
-
+const fs = require('fs');
 
 exports.createOneThing = (req, res, next) => {
-	const thingObj = JOSN.parse(req.body.thing)
+	const thingObj = JSON.parse(req.body.thing)
 	delete thingObj._id;
 	const thing = new Thing(
 		{ 
@@ -42,15 +42,27 @@ exports.updateOneThing = (req, res, next) => {
 
 
 exports.deleteOneThing = (req, res, next) => {
-	Thing.deleteOne( {_id: req.params.id} )
-		.then( () => res.status(200).json({message: 'Object deleted'}) )
-		.catch( error => res.status(400).json({error}) )
+	Thing.findOne( {_id: req.params.id} )
+	.then(
+		thing => {
+			const filename = thing.imageUrl.split('/images/')[1];
+			fs.unlink(
+				`images/${filename}`,
+				() => {
+					Thing.deleteOne( {_id: req.params.id} )
+					.then( () => res.status(200).json({message: 'Object deleted'}) )
+					.catch( error => res.status(400).json({error}) )
+				}
+			)
+		}
+	)
+	.catch( error => res.status(500).json({error}) )
 }
 
 
 
 exports.getAllThings = (req, res, next) => {
 	Thing.find()
-		.then( things => res.status(200).json(things) )
-		.catch( error => res.status(400).json({error}) )
+	.then( things => res.status(200).json(things) )
+	.catch( error => res.status(400).json({error}) ) 
 }
